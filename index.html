@@ -275,6 +275,38 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
       }
 
+      /* Nút chạm phát hỗ trợ Autoplay bị chặn trên Mobile */
+      .tap-to-play-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100dvh;
+        background: rgba(7, 11, 20, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 40;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .tap-play-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
       /* 4. Overlay Mã QR linh hoạt */
       .qr-overlay {
         position: absolute;
@@ -407,10 +439,8 @@
       <div id="player-screen" class="screen">
         <div class="video-fullscreen-container">
           <video id="main-video" playsinline webkit-playsinline></video>
-          <!-- Sử dụng thẻ audio ẩn hoàn toàn độc lập cho voice -->
-          <audio id="main-audio" preload="auto" style="display:none;"></audio>
-          <audio id="qr-audio" preload="auto" style="display:none;"></audio>
-          <audio id="bg-music" loop preload="auto" style="display:none;"></audio>
+          <audio id="main-audio" preload="auto"></audio>
+          <audio id="qr-audio" preload="auto"></audio>
         </div>
 
         <!-- Tiêu đề nổi góc trên -->
@@ -428,6 +458,13 @@
           </button>
           <button class="float-btn" onclick="goToReadyScreen()">
             <i class="fa-solid fa-house"></i> Trang chủ
+          </button>
+        </div>
+
+        <!-- OVERLAY NÚT PHÁT KHI BỊ CHẶN AUTOPLAY (Dành cho Mobile/Zalo) -->
+        <div class="tap-to-play-overlay" id="tap-overlay">
+          <button class="tap-play-btn" onclick="manualResumePlay()">
+            <i class="fa-solid fa-circle-play"></i> Bấm để tiếp tục xem
           </button>
         </div>
 
@@ -459,6 +496,7 @@
     </div>
 
     <script>
+      // ĐỔI BASE_URL THÀNH DOMAIN DỰ ÁN CỦA BẠN NẾU ĐƯA LÊN HOSTING (Ví dụ: "https://mysite.com/")
       const BASE_URL = "./";
 
       const branchData = {
@@ -466,44 +504,96 @@
           title: "Nhánh 1: Sơ lược TP. Hồ Chí Minh",
           aiVideo: BASE_URL + "nvainoi1.mp4",
           qrImage: BASE_URL + "qrnhanh1.png",
-          formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeqITCp6nlsUCYTIoLbr1yiIbXgvAf8nHC11vVrC6kHi12_Ig/viewform",
+          formUrl:
+            "https://docs.google.com/forms/d/e/1FAIpQLSeqITCp6nlsUCYTIoLbr1yiIbXgvAf8nHC11vVrC6kHi12_Ig/viewform",
           steps: [
-            { video: BASE_URL + "nhanh1p1.mp4", audio: BASE_URL + "voicenhanh1p1.mp3" },
-            { video: BASE_URL + "nhanh1p2.mp4", audio: BASE_URL + "voicenhanh1p2.mp3" },
-            { video: BASE_URL + "nhanh1p3.mp4", audio: BASE_URL + "voicenhanh1p3.mp3" },
+            {
+              video: BASE_URL + "nhanh1p1.mp4",
+              audio: BASE_URL + "voicenhanh1p1.mp3",
+              text: "Sơ lược TP. Hồ Chí Minh...",
+            },
+            {
+              video: BASE_URL + "nhanh1p2.mp4",
+              audio: BASE_URL + "voicenhanh1p2.mp3",
+              text: "Kiến trúc lâu đời...",
+            },
+            {
+              video: BASE_URL + "nhanh1p3.mp4",
+              audio: BASE_URL + "voicenhanh1p3.mp3",
+              text: "Thành phố mang tên Bác...",
+            },
           ],
         },
         2: {
           title: "Nhánh 2: Nhân vật & Sự kiện Lịch sử",
           aiVideo: BASE_URL + "nvainoi2.mp4",
           qrImage: BASE_URL + "qrnhanh2.png",
-          formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeLIIQSO1WzubQHN3UQCdqFu6WjCw0FdI6ae0tCmd1xUlvkQA/viewform",
+          formUrl:
+            "https://docs.google.com/forms/d/e/1FAIpQLSeLIIQSO1WzubQHN3UQCdqFu6WjCw0FdI6ae0tCmd1xUlvkQA/viewform",
           steps: [
-            { video: BASE_URL + "nhanh2p1.mp4", audio: BASE_URL + "voicenhanh2p1.mp3" },
-            { video: BASE_URL + "nhanh2p2.mp4", audio: BASE_URL + "voicenhanh2p2.mp3" },
-            { video: BASE_URL + "nhanh2p3.mp4", audio: BASE_URL + "voicenhanh2p3.mp3" },
+            {
+              video: BASE_URL + "nhanh2p1.mp4",
+              audio: BASE_URL + "voicenhanh2p1.MP3",
+              text: "Không gian lịch sử...",
+            },
+            {
+              video: BASE_URL + "nhanh2p2.mp4",
+              audio: BASE_URL + "voicenhanh2p2.MP3",
+              text: "Chủ tịch Hồ Chí Minh...",
+            },
+            {
+              video: BASE_URL + "nhanh2p3.mp4",
+              audio: BASE_URL + "voicenhanh2p3.MP3",
+              text: "Anh hùng Võ Thị Sáu...",
+            },
           ],
         },
         3: {
           title: "Nhánh 3: Ẩm thực Đặc trưng",
           aiVideo: BASE_URL + "nvainoi3.mp4",
           qrImage: BASE_URL + "qrnhanh3.png",
-          formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSewtW7Hm2FGlBfAs7n7nbMNOz8bAAZp0pz740-tbkRMO39QBg/viewform",
+          formUrl:
+            "https://docs.google.com/forms/d/e/1FAIpQLSewtW7Hm2FGlBfAs7n7nbMNOz8bAAZp0pz740-tbkRMO39QBg/viewform",
           steps: [
-            { video: BASE_URL + "nhanh3p1.mp4", audio: BASE_URL + "voicenhanh3p1.mp3" },
-            { video: BASE_URL + "nhanh3p2.mp4", audio: BASE_URL + "voicenhanh3p2.mp3" },
-            { video: BASE_URL + "nhanh3p3.mp4", audio: BASE_URL + "voicenhanh3p3.mp3" },
+            {
+              video: BASE_URL + "nhanh3p1.mp4",
+              audio: BASE_URL + "voicenhanh3p1.mp3",
+              text: "Ẩm thực phương Nam...",
+            },
+            {
+              video: BASE_URL + "nhanh3p2.mp4",
+              audio: BASE_URL + "voicenhanh3p2.mp3",
+              text: "Cơm tấm, bánh mì...",
+            },
+            {
+              video: BASE_URL + "nhanh3p3.mp4",
+              audio: BASE_URL + "voicenhanh3p3.mp3",
+              text: "Bánh canh Long Hương...",
+            },
           ],
         },
         4: {
           title: "Nhánh 4: Du lịch Bà Rịa - Vũng Tàu",
           aiVideo: BASE_URL + "nvainoi4.mp4",
           qrImage: BASE_URL + "qrnhanh4.png",
-          formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSeBA9hHvhXqc_3py18UFVhAU2aCA01ujFQ41KIVq08YGot61A/viewform",
+          formUrl:
+            "https://docs.google.com/forms/d/e/1FAIpQLSeBA9hHvhXqc_3py18UFVhAU2aCA01ujFQ41KIVq08YGot61A/viewform",
           steps: [
-            { video: BASE_URL + "nhanh4p1.mp4", audio: BASE_URL + "voicenhanh4p1.mp3" },
-            { video: BASE_URL + "nhanh4p2.mp4", audio: BASE_URL + "voicenhanh4p2.mp3" },
-            { video: BASE_URL + "nhanh4p3.mp4", audio: BASE_URL + "voicenhanh4p3.mp3" },
+            {
+              video: BASE_URL + "nhanh4p1.mp4",
+              audio: BASE_URL + "voicenhanh4p1.mp3",
+              text: "Bà Rịa Vũng Tàu...",
+            },
+            {
+              video: BASE_URL + "nhanh4p2.mp4",
+              audio: BASE_URL + "voicenhanh4p2.MP3",
+              text: "Hòn Bà...",
+            },
+            {
+              video: BASE_URL + "nhanh4p3.mp4",
+              audio: BASE_URL + "voicenhanh4p3.mp3",
+              text: "Hải đăng Vũng Tàu...",
+            },
           ],
         },
       };
@@ -515,19 +605,22 @@
       const mainVideo = document.getElementById("main-video");
       const mainAudio = document.getElementById("main-audio");
       const qrAudio = document.getElementById("qr-audio");
-      const bgMusic = document.getElementById("bg-music");
       const stepIndicatorEl = document.getElementById("step-indicator");
       const branchTitleEl = document.getElementById("branch-title");
       const qrOverlay = document.getElementById("qr-overlay");
       const qrNextBtn = document.getElementById("qr-next-btn");
       const qrImg = document.getElementById("qr-img");
       const formLinkA = document.getElementById("form-link-a");
+      const tapOverlay = document.getElementById("tap-overlay");
 
       function startIntro() {
         switchScreen("intro-screen");
         introVideo.src = BASE_URL + "intro.mp4";
         introVideo.currentTime = 0;
-        introVideo.play().catch(() => {});
+
+        introVideo.play().catch(() => {
+          console.log("Intro autoplay blocked");
+        });
 
         introVideo.onended = () => {
           enterMainJourney();
@@ -540,26 +633,27 @@
       }
 
       function enterMainJourney() {
+        // Thêm đoạn này vào trong hàm enterMainJourney() để bật lại nhạc nền
+        const bgMusic = document.createElement("audio");
+        bgMusic.src = BASE_URL + "nhacnen.mp3";
+        bgMusic.loop = true;
+        bgMusic.volume = 0.2; // Chỉnh âm lượng nhỏ lại để không lấn át giọng đọc
+        bgMusic.play().catch((e) => console.log("Nhạc nền bị chặn autoplay"));
         currentBranchId = 1;
         currentStepIndex = -1;
         switchScreen("player-screen");
-
-        bgMusic.src = BASE_URL + "nhacnen.mp3";
-        bgMusic.volume = 0.2;
-        bgMusic.play().catch(() => {});
-
         playCurrentStep();
       }
 
       function goToReadyScreen() {
         stopAllMedia();
-        bgMusic.pause();
-        bgMusic.currentTime = 0;
         switchScreen("ready-screen");
       }
 
       function switchScreen(screenId) {
-        document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
         document.getElementById(screenId).classList.add("active");
       }
 
@@ -567,60 +661,48 @@
         mainVideo.pause();
         mainAudio.pause();
         qrAudio.pause();
-        mainVideo.currentTime = 0;
-        mainAudio.currentTime = 0;
         qrAudio.currentTime = 0;
+        tapOverlay.style.display = "none";
       }
 
       function playCurrentStep() {
         stopAllMedia();
-
         mainVideo.style.opacity = "0";
         setTimeout(() => {
           mainVideo.style.opacity = "1";
-        }, 150);
+        }, 200);
 
         qrOverlay.style.display = "none";
         branchTitleEl.innerHTML = `<i class="fa-solid fa-compass"></i> ${branchData[currentBranchId].title}`;
 
         if (currentStepIndex === -1) {
+          // Slide Video Intro của Nhánh
           stepIndicatorEl.innerText = "Giới thiệu hoạt hình mở đầu";
           mainAudio.src = "";
-          mainVideo.src = BASE_URL + branchData[currentBranchId].aiVideo.replace(/^\.\//, "");
+          mainVideo.src = branchData[currentBranchId].aiVideo;
           mainVideo.loop = false;
-          mainVideo.load();
-          mainVideo.play().catch(() => {});
+
+          attemptPlayMedia(mainVideo, null);
 
           mainVideo.onended = () => {
             mainVideo.style.opacity = "0";
             setTimeout(() => {
               currentStepIndex = 0;
               playCurrentStep();
-            }, 400);
+            }, 500);
           };
         } else if (currentStepIndex >= 0 && currentStepIndex < 3) {
+          // Slide Nội dung (0, 1, 2)
           const stepData = branchData[currentBranchId].steps[currentStepIndex];
           stepIndicatorEl.innerText = `Slide nội dung ${currentStepIndex + 1} / 3`;
 
-          // Gán và ép load lại nguồn trên GitHub Pages
           mainAudio.src = stepData.audio;
           mainVideo.src = stepData.video;
-          mainAudio.load();
-          mainVideo.load();
-          mainVideo.loop = true;
+          mainVideo.loop = true; // Cho phép video loop mượt cho đến khi Audio kết thúc
 
-          // Xử lý phát an toàn sau khi load xong metadata
-          const playAudioPromise = mainAudio.play();
-          const playVideoPromise = mainVideo.play();
+          attemptPlayMedia(mainVideo, mainAudio);
 
-          if (playAudioPromise !== undefined) {
-            playAudioPromise.catch(err => console.log("Audio play deferred:", err));
-          }
-          if (playVideoPromise !== undefined) {
-            playVideoPromise.catch(err => console.log("Video play deferred:", err));
-          }
-
-          // Lắng nghe sự kiện kết thúc voice để tự động nhảy slide tiếp theo
+          // Sự kiện: Khi GIỌNG ĐỌC kết thúc thì tự chuyển slide kế tiếp (Tối ưu nhất cho mobile)
           mainAudio.onended = () => {
             mainVideo.pause();
             mainVideo.style.opacity = "0";
@@ -630,6 +712,7 @@
             }, 400);
           };
         } else {
+          // Màn hình hoàn thành & hiện Mã QR
           stepIndicatorEl.innerText = "Hoàn thành nhánh!";
           mainVideo.pause();
           mainAudio.pause();
@@ -637,10 +720,11 @@
           const branch = branchData[currentBranchId];
           qrImg.src = branch.qrImage;
           formLinkA.href = branch.formUrl;
+
           qrOverlay.style.display = "flex";
 
           qrAudio.src = BASE_URL + "voicemaqr.mp3";
-          qrAudio.load();
+          qrAudio.currentTime = 0;
           qrAudio.play().catch(() => {});
 
           if (currentBranchId < 4) {
@@ -653,13 +737,34 @@
         }
       }
 
+      // Hàm cố gắng phát Media & xử lý khi Zalo / Safari chặn Autoplay
+      function attemptPlayMedia(videoEl, audioEl) {
+        const promises = [];
+        if (videoEl && videoEl.src) promises.push(videoEl.play());
+        if (audioEl && audioEl.src) promises.push(audioEl.play());
+
+        Promise.all(promises).catch((err) => {
+          console.warn(
+            "Autoplay bị trình duyệt chặn, mở Overlay thủ công:",
+            err,
+          );
+          tapOverlay.style.display = "flex";
+        });
+      }
+
+      function manualResumePlay() {
+        tapOverlay.style.display = "none";
+        if (mainVideo.src) mainVideo.play().catch(() => {});
+        if (mainAudio.src) mainAudio.play().catch(() => {});
+      }
+
       function nextBranch() {
         qrAudio.pause();
         qrAudio.currentTime = 0;
         if (currentBranchId < 4) {
           currentBranchId++;
           currentStepIndex = -1;
-          playCurrentStep(); // Cú click vào nút này kích hoạt toàn bộ luồng chạy trên Git mượt mà!
+          playCurrentStep();
         } else {
           goToReadyScreen();
         }
